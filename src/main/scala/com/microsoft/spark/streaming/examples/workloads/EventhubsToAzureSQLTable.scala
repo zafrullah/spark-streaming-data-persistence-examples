@@ -19,6 +19,7 @@ package com.microsoft.spark.streaming.examples.workloads
 
 import java.sql.{Statement, Connection, DriverManager}
 
+import com.microsoft.spark.streaming.examples.arguments.EventhubsArgumentParser._
 import com.microsoft.spark.streaming.examples.arguments.{EventhubsArgumentKeys, EventhubsArgumentParser}
 import com.microsoft.spark.streaming.examples.common.{StreamUtilities, EventContent, StreamStatistics}
 import org.apache.spark._
@@ -28,11 +29,7 @@ import org.apache.spark.streaming.{Seconds, StreamingContext}
 
 object EventhubsToAzureSQLTable {
 
-  def main(inputArguments: Array[String]): Unit = {
-
-    val inputOptions = EventhubsArgumentParser.parseArguments(Map(), inputArguments.toList)
-
-    EventhubsArgumentParser.verifyEventhubsToSQLTableArguments(inputOptions)
+  def createStreamingContext(inputOptions: ArgumentMap): StreamingContext = {
 
     val eventHubsParameters = Map[String, String](
       "eventhubs.namespace" -> inputOptions(Symbol(EventhubsArgumentKeys.EventhubsNamespace)).asInstanceOf[String],
@@ -55,20 +52,6 @@ object EventhubsToAzureSQLTable {
 
     val sqlTableName: String = inputOptions(Symbol(EventhubsArgumentKeys.EventSQLTable)).asInstanceOf[String]
 
-    val sqlDriverConnection: Connection =  DriverManager.getConnection(sqlDatabaseConnectionString)
-
-    sqlDriverConnection.setAutoCommit(false)
-    val sqlDriverStatement: Statement = sqlDriverConnection.createStatement()
-    sqlDriverStatement.addBatch(f"IF NOT EXISTS(SELECT * FROM sys.objects WHERE object_id" +
-      f" = OBJECT_ID(N'[dbo].[$sqlTableName]') AND type in (N'U'))" +
-      f"\nCREATE TABLE $sqlTableName(EventDetails NVARCHAR(128) NOT NULL)")
-    sqlDriverStatement.addBatch(f"IF IndexProperty(Object_Id('EventContent'), 'IX_EventDetails', 'IndexId') IS NULL" +
-      f"\nCREATE CLUSTERED INDEX IX_EventDetails ON $sqlTableName(EventDetails)")
-    sqlDriverStatement.executeBatch()
-    sqlDriverConnection.commit()
-
-    sqlDriverConnection.close()
-
     val sparkConfiguration = new SparkConf().setAppName(this.getClass().getSimpleName())
     val sparkContext = new SparkContext(sparkConfiguration)
 
@@ -81,7 +64,7 @@ object EventhubsToAzureSQLTable {
     val eventHubsWindowedStream = eventHubsStream
       .window(Seconds(inputOptions(Symbol(EventhubsArgumentKeys.BatchIntervalInSeconds)).asInstanceOf[Int]))
 
-    val sqlContext = new SQLContext(sparkContext)
+    val sqlContext = new SQLContext(streamingContext.sparkContext)
 
     import sqlContext.implicits._
 
@@ -110,6 +93,44 @@ object EventhubsToAzureSQLTable {
     }
 
     totalEventCount.print()
+
+    streamingContext
+  }
+
+  def main(inputArguments: Array[String]): Unit = {
+
+    val inputOptions = EventhubsArgumentParser.parseArguments(Map(), inputArguments.toList)
+
+    EventhubsArgumentParser.verifyEventhubsToSQLTableArguments(inputOptions)
+
+    val sqlDatabaseConnectionString : String = StreamUtilities.getSqlJdbcConnectionString(
+      inputOptions(Symbol(EventhubsArgumentKeys.SQLServerFQDN)).asInstanceOf[String],
+      inputOptions(Symbol(EventhubsArgumentKeys.SQLDatabaseName)).asInstanceOf[String],
+      inputOptions(Symbol(EventhubsArgumentKeys.DatabaseUsername)).asInstanceOf[String],
+      inputOptions(Symbol(EventhubsArgumentKeys.DatabasePassword)).asInstanceOf[String])
+
+    val sqlTableName: String = inputOptions(Symbol(EventhubsArgumentKeys.EventSQLTable)).asInstanceOf[String]
+
+    val sqlDriverConnection: Connection =  DriverManager.getConnection(sqlDatabaseConnectionString)
+
+    sqlDriverConnection.setAutoCommit(false)
+    val sqlDriverStatement: Statement = sqlDriverConnection.createStatement()
+    sqlDriverStatement.addBatch(f"IF NOT EXISTS(SELECT * FROM sys.objects WHERE object_id" +
+      f" = OBJECT_ID(N'[dbo].[$sqlTableName]') AND type in (N'U'))" +
+      f"\nCREATE TABLE $sqlTableName(EventDetails NVARCHAR(128) NOT NULL)")
+    sqlDriverStatement.addBatch(f"IF IndexProperty(Object_Id('$sqlTableName'), 'IX_EventDetails', 'IndexId') IS NULL" +
+      f"\nCREATE CLUSTERED INDEX IX_EventDetails ON $sqlTableName(EventDetails)")
+    sqlDriverStatement.executeBatch()
+    sqlDriverConnection.commit()
+
+    sqlDriverConnection.close()
+
+    //Create or recreate streaming context
+
+    val streamingContext = StreamingContext
+      .getOrCreate(inputOptions(Symbol(EventhubsArgumentKeys.CheckpointDirectory)).asInstanceOf[String],
+        () => createStreamingContext(inputOptions))
+
 
     streamingContext.start()
 

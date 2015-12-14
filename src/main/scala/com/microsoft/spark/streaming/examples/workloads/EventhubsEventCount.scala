@@ -17,6 +17,7 @@
 
 package com.microsoft.spark.streaming.examples.workloads
 
+import com.microsoft.spark.streaming.examples.arguments.EventhubsArgumentParser.ArgumentMap
 import com.microsoft.spark.streaming.examples.arguments.{EventhubsArgumentKeys, EventhubsArgumentParser}
 import com.microsoft.spark.streaming.examples.common.StreamStatistics
 import org.apache.spark._
@@ -25,11 +26,7 @@ import org.apache.spark.streaming.{Seconds, StreamingContext}
 
 object EventhubsEventCount {
 
-  def main(inputArguments: Array[String]): Unit = {
-
-    val inputOptions = EventhubsArgumentParser.parseArguments(Map(), inputArguments.toList)
-
-    EventhubsArgumentParser.verifyEventhubsEventCountArguments(inputOptions)
+  def createStreamingContext(inputOptions: ArgumentMap): StreamingContext = {
 
     val eventHubsParameters = Map[String, String](
       "eventhubs.namespace" -> inputOptions(Symbol(EventhubsArgumentKeys.EventhubsNamespace)).asInstanceOf[String],
@@ -77,6 +74,21 @@ object EventhubsEventCount {
     }
 
     totalEventCount.print()
+
+    streamingContext
+  }
+
+  def main(inputArguments: Array[String]): Unit = {
+
+    val inputOptions: ArgumentMap = EventhubsArgumentParser.parseArguments(Map(), inputArguments.toList)
+
+    EventhubsArgumentParser.verifyEventhubsEventCountArguments(inputOptions)
+
+    //Create or recreate streaming context
+
+    val streamingContext = StreamingContext
+      .getOrCreate(inputOptions(Symbol(EventhubsArgumentKeys.CheckpointDirectory)).asInstanceOf[String],
+      () => createStreamingContext(inputOptions))
 
     streamingContext.start()
 

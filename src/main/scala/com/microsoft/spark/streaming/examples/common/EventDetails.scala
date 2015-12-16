@@ -17,4 +17,4 @@
 
 package com.microsoft.spark.streaming.examples.common
 
-case class EventContent(messageBody: String)
+case class EventContent(EventDetails: String)

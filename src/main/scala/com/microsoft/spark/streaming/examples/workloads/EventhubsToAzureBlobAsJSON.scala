@@ -42,7 +42,13 @@ object EventhubsToAzureBlobAsJSON {
       "eventhubs.checkpoint.dir" -> inputOptions(Symbol(EventhubsArgumentKeys.CheckpointDirectory)).asInstanceOf[String]
     )
 
-    val sparkConfiguration = new SparkConf().setAppName(this.getClass().getSimpleName())
+    val sparkConfiguration = new SparkConf().setAppName(this.getClass.getSimpleName)
+
+    sparkConfiguration.set("spark.streaming.receiver.writeAheadLog.enable", "true")
+    sparkConfiguration.set("spark.streaming.driver.writeAheadLog.closeFileAfterWrite", "true")
+    sparkConfiguration.set("spark.streaming.receiver.writeAheadLog.closeFileAfterWrite", "true")
+    sparkConfiguration.set("spark.streaming.stopGracefullyOnShutdown", "true")
+
     val sparkContext = new SparkContext(sparkConfiguration)
 
     val streamingContext = new StreamingContext(sparkContext,

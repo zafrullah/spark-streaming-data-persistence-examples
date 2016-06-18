@@ -52,7 +52,13 @@ object EventhubsToAzureSQLTable {
 
     val sqlTableName: String = inputOptions(Symbol(EventhubsArgumentKeys.EventSQLTable)).asInstanceOf[String]
 
-    val sparkConfiguration = new SparkConf().setAppName(this.getClass().getSimpleName())
+    val sparkConfiguration = new SparkConf().setAppName(this.getClass.getSimpleName)
+
+    sparkConfiguration.set("spark.streaming.receiver.writeAheadLog.enable", "true")
+    sparkConfiguration.set("spark.streaming.driver.writeAheadLog.closeFileAfterWrite", "true")
+    sparkConfiguration.set("spark.streaming.receiver.writeAheadLog.closeFileAfterWrite", "true")
+    sparkConfiguration.set("spark.streaming.stopGracefullyOnShutdown", "true")
+
     val sparkContext = new SparkContext(sparkConfiguration)
 
     val streamingContext = new StreamingContext(sparkContext,
@@ -64,7 +70,7 @@ object EventhubsToAzureSQLTable {
     val eventHubsWindowedStream = eventHubsStream
       .window(Seconds(inputOptions(Symbol(EventhubsArgumentKeys.BatchIntervalInSeconds)).asInstanceOf[Int]))
 
-    val sqlContext = new SQLContext(streamingContext.sparkContext)
+    val sqlContext = SQLContext.getOrCreate(streamingContext.sparkContext)
 
     import sqlContext.implicits._
 

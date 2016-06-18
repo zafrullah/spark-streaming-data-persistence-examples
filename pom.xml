@@ -16,9 +16,19 @@
     <scala.version>2.10.4</scala.version>
     <scala.compat.version>2.10.4</scala.compat.version>
     <scala.binary.version>2.10</scala.binary.version>
-    <spark.version>1.5.1</spark.version>
+    <spark.version>1.6.1</spark.version>
   </properties>
 
+  <repositories>
+    <repository>
+      <id>spark-eventhubs</id>
+      <url>https://raw.github.com/hdinsight/spark-eventhubs/maven-repo/</url>
+      <snapshots>
+        <enabled>true</enabled>
+        <updatePolicy>always</updatePolicy>
+      </snapshots>
+    </repository>
+  </repositories>
   <!--
     <repositories>
       <repository>
@@ -62,6 +72,11 @@
       <groupId>org.apache.spark</groupId>
       <artifactId>spark-hive_${scala.binary.version}</artifactId>
       <version>${spark.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.microsoft.azure</groupId>
+      <artifactId>spark-streaming-eventhubs_2.10</artifactId>
+      <version>1.0.0</version>
     </dependency>
 
     <!-- Test -->
@@ -110,8 +125,6 @@
         <configuration>
           <useFile>false</useFile>
           <disableXmlReport>true</disableXmlReport>
-          <!-- If you have classpath issue like NoDefClassError,... -->
-          <!-- useManifestOnlyJar>false</useManifestOnlyJar -->
           <includes>
             <include>**/*Test.*</include>
             <include>**/*Suite.*</include>

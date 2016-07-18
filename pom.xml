@@ -19,7 +19,7 @@
     <spark.version>1.6.1</spark.version>
   </properties>
 
-  <!--repositories>
+  <repositories>
     <repository>
       <id>spark-eventhubs</id>
       <url>https://raw.github.com/hdinsight/spark-eventhubs/maven-repo/</url>
@@ -28,7 +28,7 @@
         <updatePolicy>always</updatePolicy>
       </snapshots>
     </repository>
-  </repositories-->
+  </repositories>
   <!--
     <repositories>
       <repository>

@@ -3,11 +3,11 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.microsoft.spark.streaming.examples</groupId>
-  <artifactId>microsoft-spark-streaming-examples</artifactId>
-  <version>0.1.0</version>
+  <artifactId>spark-streaming-data-persistence-examples</artifactId>
+  <version>1.0.0</version>
   <name>${project.artifactId}</name>
   <description>Spark Streaming With Event Hubs</description>
-  <inceptionYear>2010</inceptionYear>
+  <inceptionYear>2015</inceptionYear>
 
   <properties>
     <maven.compiler.source>1.5</maven.compiler.source>
@@ -16,36 +16,8 @@
     <scala.version>2.10.4</scala.version>
     <scala.compat.version>2.10.4</scala.compat.version>
     <scala.binary.version>2.10</scala.binary.version>
-    <spark.version>1.6.1</spark.version>
+    <spark.version>1.6.2</spark.version>
   </properties>
-
-  <repositories>
-    <repository>
-      <id>spark-eventhubs</id>
-      <url>https://raw.github.com/hdinsight/spark-eventhubs/maven-repo/</url>
-      <snapshots>
-        <enabled>true</enabled>
-        <updatePolicy>always</updatePolicy>
-      </snapshots>
-    </repository>
-  </repositories>
-  <!--
-    <repositories>
-      <repository>
-        <id>scala-tools.org</id>
-        <name>Scala-Tools Maven2 Repository</name>;
-        <url>http://scala-tools.org/repo-releases</url>
-      </repository>
-    </repositories>
-
-    <pluginRepositories>
-      <pluginRepository>
-        <id>scala-tools.org</id>
-        <name>Scala-Tools Maven2 Repository</name>
-        <url>http://scala-tools.org/repo-releases</url>
-      </pluginRepository>
-    </pluginRepositories>
-  -->
 
   <dependencies>
     <dependency>
@@ -76,7 +48,7 @@
     <dependency>
       <groupId>com.microsoft.azure</groupId>
       <artifactId>spark-streaming-eventhubs_2.10</artifactId>
-      <version>1.1.0</version>
+      <version>1.6.0</version>
     </dependency>
 
     <!-- Test -->
@@ -130,6 +102,36 @@
             <include>**/*Suite.*</include>
           </includes>
         </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-shade-plugin</artifactId>
+        <version>2.4.1</version>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>shade</goal>
+            </goals>
+            <configuration>
+              <filters>
+                <filter>
+                  <artifact>*:*</artifact>
+                  <excludes>
+                    <exclude>META-INF/*.SF</exclude>
+                    <exclude>META-INF/*.DSA</exclude>
+                    <exclude>META-INF/*.RSA</exclude>
+                  </excludes>
+                </filter>
+              </filters>
+              <artifactSet>
+                <includes>
+                  <include>com.microsoft.azure</include>
+                </includes>
+              </artifactSet>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>

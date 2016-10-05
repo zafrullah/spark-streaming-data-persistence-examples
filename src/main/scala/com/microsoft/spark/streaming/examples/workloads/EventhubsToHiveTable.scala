@@ -43,8 +43,14 @@ object EventhubsToHiveTable {
       "eventhubs.checkpoint.dir" -> inputOptions(Symbol(EventhubsArgumentKeys.CheckpointDirectory)).asInstanceOf[String]
     )
 
-    val sparkConfiguration = new SparkConf().setAppName(this.getClass.getSimpleName)
+    /**
+      * In Spark 2.0.x, SparkConf must be initialized through EventhubsUtil so that required
+      * data structures internal to Azure Eventhubs Client get registered with the Kryo Serializer.
+      */
 
+    val sparkConfiguration : SparkConf = EventHubsUtils.initializeSparkStreamingConfigurations
+
+    sparkConfiguration.setAppName(this.getClass.getSimpleName)
     sparkConfiguration.set("spark.streaming.receiver.writeAheadLog.enable", "true")
     sparkConfiguration.set("spark.streaming.driver.writeAheadLog.closeFileAfterWrite", "true")
     sparkConfiguration.set("spark.streaming.receiver.writeAheadLog.closeFileAfterWrite", "true")

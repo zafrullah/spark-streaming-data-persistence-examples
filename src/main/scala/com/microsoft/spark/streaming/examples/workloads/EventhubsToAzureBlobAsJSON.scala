@@ -19,9 +19,9 @@ package com.microsoft.spark.streaming.examples.workloads
 
 import com.microsoft.spark.streaming.examples.arguments.EventhubsArgumentParser._
 import com.microsoft.spark.streaming.examples.arguments.{EventhubsArgumentKeys, EventhubsArgumentParser}
-import com.microsoft.spark.streaming.examples.common.{StreamStatistics, EventContent}
+import com.microsoft.spark.streaming.examples.common.{EventContent, StreamStatistics}
 import org.apache.spark._
-import org.apache.spark.sql.SQLContext
+import org.apache.spark.sql.{SQLContext, SaveMode}
 import org.apache.spark.streaming.eventhubs.EventHubsUtils
 import org.apache.spark.streaming.{Seconds, StreamingContext}
 
@@ -42,8 +42,14 @@ object EventhubsToAzureBlobAsJSON {
       "eventhubs.checkpoint.dir" -> inputOptions(Symbol(EventhubsArgumentKeys.CheckpointDirectory)).asInstanceOf[String]
     )
 
-    val sparkConfiguration = new SparkConf().setAppName(this.getClass.getSimpleName)
+    /**
+      * In Spark 2.0.x, SparkConf must be initialized through EventhubsUtil so that required
+      * data structures internal to Azure Eventhubs Client get registered with the Kryo Serializer.
+      */
 
+    val sparkConfiguration : SparkConf = EventHubsUtils.initializeSparkStreamingConfigurations
+
+    sparkConfiguration.setAppName(this.getClass.getSimpleName)
     sparkConfiguration.set("spark.streaming.receiver.writeAheadLog.enable", "true")
     sparkConfiguration.set("spark.streaming.driver.writeAheadLog.closeFileAfterWrite", "true")
     sparkConfiguration.set("spark.streaming.receiver.writeAheadLog.closeFileAfterWrite", "true")
@@ -65,7 +71,8 @@ object EventhubsToAzureBlobAsJSON {
     import sqlContext.implicits._
 
     eventHubsWindowedStream.map(x => EventContent(new String(x)))
-      .foreachRDD(rdd => rdd.toDF().toJSON.saveAsTextFile(inputOptions(Symbol(EventhubsArgumentKeys.EventStoreFolder))
+      .foreachRDD(rdd => rdd.toDF().toJSON.write.mode(SaveMode.Overwrite)
+        .save(inputOptions(Symbol(EventhubsArgumentKeys.EventStoreFolder))
         .asInstanceOf[String]))
 
     // Count number of events received the past batch

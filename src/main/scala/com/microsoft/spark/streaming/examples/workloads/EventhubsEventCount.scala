@@ -21,6 +21,7 @@ import com.microsoft.spark.streaming.examples.arguments.EventhubsArgumentParser.
 import com.microsoft.spark.streaming.examples.arguments.{EventhubsArgumentKeys, EventhubsArgumentParser}
 import com.microsoft.spark.streaming.examples.common.StreamStatistics
 import org.apache.spark._
+import org.apache.spark.sql.SparkSession
 import org.apache.spark.streaming.eventhubs.EventHubsUtils
 import org.apache.spark.streaming.{Seconds, StreamingContext}
 
@@ -54,9 +55,9 @@ object EventhubsEventCount {
     sparkConfiguration.set("spark.streaming.receiver.writeAheadLog.closeFileAfterWrite", "true")
     sparkConfiguration.set("spark.streaming.stopGracefullyOnShutdown", "true")
 
-    val sparkContext = new SparkContext(sparkConfiguration)
+    val sparkSession : SparkSession = SparkSession.builder().config(sparkConfiguration).getOrCreate()
 
-    val streamingContext = new StreamingContext(sparkContext,
+    val streamingContext = new StreamingContext(sparkSession.sparkContext,
       Seconds(inputOptions(Symbol(EventhubsArgumentKeys.BatchIntervalInSeconds)).asInstanceOf[Int]))
     streamingContext.checkpoint(inputOptions(Symbol(EventhubsArgumentKeys.CheckpointDirectory)).asInstanceOf[String])
 

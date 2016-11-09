@@ -45,6 +45,8 @@ object EventhubsToHiveTable {
 
     val sparkConfiguration = new SparkConf().setAppName(this.getClass.getSimpleName)
 
+    sparkConfiguration.set("spark.streaming.driver.writeAheadLog.allowBatching", "true")
+    sparkConfiguration.set("spark.streaming.driver.writeAheadLog.batchingTimeout", "60000")
     sparkConfiguration.set("spark.streaming.receiver.writeAheadLog.enable", "true")
     sparkConfiguration.set("spark.streaming.driver.writeAheadLog.closeFileAfterWrite", "true")
     sparkConfiguration.set("spark.streaming.receiver.writeAheadLog.closeFileAfterWrite", "true")
@@ -91,7 +93,6 @@ object EventhubsToHiveTable {
       .asInstanceOf[Int]))
 
     if (inputOptions.contains(Symbol(EventhubsArgumentKeys.EventCountFolder))) {
-
       totalEventCount.saveAsTextFiles(inputOptions(Symbol(EventhubsArgumentKeys.EventCountFolder))
         .asInstanceOf[String])
     }
@@ -115,15 +116,10 @@ object EventhubsToHiveTable {
 
     streamingContext.start()
 
-    if(inputOptions.contains(Symbol(EventhubsArgumentKeys.TimeoutInMinutes))) {
-
+    if(inputOptions.contains(Symbol(EventhubsArgumentKeys.TimeoutInMinutes)))
       streamingContext.awaitTerminationOrTimeout(inputOptions(Symbol(EventhubsArgumentKeys.TimeoutInMinutes))
         .asInstanceOf[Long] * 60 * 1000)
-    }
-    else {
-
-      streamingContext.awaitTermination()
-    }
+    else streamingContext.awaitTermination()
   }
 }
 

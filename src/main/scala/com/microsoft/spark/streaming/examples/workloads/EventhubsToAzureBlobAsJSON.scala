@@ -50,6 +50,8 @@ object EventhubsToAzureBlobAsJSON {
     val sparkConfiguration : SparkConf = EventHubsUtils.initializeSparkStreamingConfigurations
 
     sparkConfiguration.setAppName(this.getClass.getSimpleName)
+    sparkConfiguration.set("spark.streaming.driver.writeAheadLog.allowBatching", "true")
+    sparkConfiguration.set("spark.streaming.driver.writeAheadLog.batchingTimeout", "60000")
     sparkConfiguration.set("spark.streaming.receiver.writeAheadLog.enable", "true")
     sparkConfiguration.set("spark.streaming.driver.writeAheadLog.closeFileAfterWrite", "true")
     sparkConfiguration.set("spark.streaming.receiver.writeAheadLog.closeFileAfterWrite", "true")

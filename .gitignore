@@ -39,3 +39,9 @@ build.log
 
 #SHITTY output not in target directory
 build.log
+
+
+.DS_STORE
+dependency-reduced-pom.xml
+out/
+src/main/scala/META-INF/
